@@ -2,7 +2,9 @@
 
 #include <iostream>
 #include <windows.h>
+#include <shellapi.h>
 #include <ws2tcpip.h>
+#include <TlHelp32.h>
 using namespace std;
 
 #pragma comment (lib, "Ws2_32.lib")
@@ -13,10 +15,54 @@ using namespace std;
 #define DEFAULT_PORT "27015"
 #define PAUSE 0
 
+bool IsServerRunning(const char* serverExe) {
+    HANDLE hProcessSnap;
+    PROCESSENTRY32 pe32;
+    hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    if (!Process32First(hProcessSnap, &pe32)) {
+        CloseHandle(hProcessSnap);
+        return false;
+    }
+
+    do {
+        if (wcscmp(pe32.szExeFile, L"Server.exe") == 0) {
+            CloseHandle(hProcessSnap);
+            return true;
+        }
+    } while (Process32Next(hProcessSnap, &pe32));
+
+    CloseHandle(hProcessSnap);
+    return false;
+}
+
+void StartServer(const char* serverExe) {
+    SHELLEXECUTEINFO sei;
+    ZeroMemory(&sei, sizeof(sei));
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    sei.lpFile = L"D:\\папка иры\\Институт\\Клієнт серверне програмування\\Server\\x64\\Debug\\Server.exe";
+    sei.nShow = SW_SHOW;
+
+    if (!ShellExecuteEx(&sei)) {
+        cout << "Не вдалося запустити сервер!\n";
+    }
+}
+
 int main(int argc, char** argv) {
     setlocale(0, "Ukrainian");
     system("title CLIENT SIDE");
 
+    const char* serverExe = "server.exe"; 
+    if (!IsServerRunning(serverExe)) {
+        cout << "Сервер не запущено. Запускаємо сервер...\n";
+        StartServer(serverExe);
+        Sleep(1000); 
+    }
 
     WSADATA wsaData;
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -69,11 +115,9 @@ int main(int argc, char** argv) {
         cout << "пiдключення до сервера пройшло успiшно!\n";
     }
 
-    cout << "Доступні команди:\n";
-    cout << "1. \"your name\"\n";
-    cout << "2. \"how are you doing\"\n";
-    cout << "3. \"goodbye\"\n";
-    cout << endl;
+    /*cout << "Доступні команди:\n";
+    cout << "1. \"як справи\" - сервер відповідає \"чудово\"\n";
+    cout << "2. \"goodbye\" - завершення роботи клієнта\n";
 
     char message[DEFAULT_BUFLEN];
     char answer[DEFAULT_BUFLEN];
@@ -97,6 +141,35 @@ int main(int argc, char** argv) {
         if (iResult > 0) {
             answer[iResult] = '\0';
             cout << "Відповідь сервера: " << answer << endl;
+        }
+        else {
+            cout << "Сервер закрив з'єднання.\n";
+            break;
+        }
+    }*/
+
+    char message[DEFAULT_BUFLEN];
+    char answer[DEFAULT_BUFLEN];
+
+    while (true) {
+        cout << "Введіть ціле число (або 'exit' для завершення): ";
+        cin.getline(message, DEFAULT_BUFLEN);
+
+        if (strcmp(message, "exit") == 0) {
+            send(ConnectSocket, message, (int)strlen(message), 0);
+            break;
+        }
+
+        iResult = send(ConnectSocket, message, (int)strlen(message), 0);
+        if (iResult == SOCKET_ERROR) {
+            cout << "Помилка відправки.\n";
+            break;
+        }
+
+        iResult = recv(ConnectSocket, answer, DEFAULT_BUFLEN, 0);
+        if (iResult > 0) {
+            answer[iResult] = '\0';
+            cout << "Сервер повернув: " << answer << endl;
         }
         else {
             cout << "Сервер закрив з'єднання.\n";
