@@ -117,12 +117,12 @@ int main(int argc, char** argv) {
 
     /*cout << "Доступні команди:\n";
     cout << "1. \"як справи\" - сервер відповідає \"чудово\"\n";
-    cout << "2. \"goodbye\" - завершення роботи клієнта\n";
+    cout << "2. \"goodbye\" - завершення роботи клієнта\n";*/
 
     char message[DEFAULT_BUFLEN];
     char answer[DEFAULT_BUFLEN];
 
-    while (true) {
+    /*while (true) {
         cout << "Введіть повідомлення для сервера: ";
         cin.getline(message, DEFAULT_BUFLEN);
 
@@ -147,9 +147,6 @@ int main(int argc, char** argv) {
             break;
         }
     }*/
-
-    char message[DEFAULT_BUFLEN];
-    char answer[DEFAULT_BUFLEN];
 
     while (true) {
         cout << "Введіть ціле число (або 'exit' для завершення): ";
